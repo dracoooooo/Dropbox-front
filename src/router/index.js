@@ -2,7 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import register from "@/views/register";
 import login from "@/views/login";
-import main from "@/views";
+import dropbox from "@/views";
 
 
 Vue.use(VueRouter)
@@ -21,7 +21,7 @@ const routes = [
   {
     path: '/',
     name: 'index',
-    component: main
+    component: dropbox
   }
 ]
 
