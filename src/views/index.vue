@@ -1,5 +1,8 @@
 <template>
   <div>
+
+
+
 <!--    <button @click="getAllFile()">get</button>-->
 <!--    <user-file v-for="f in files" v-bind="f" :key="f.id"></user-file>-->
     <el-container style="max-height: 100%">
@@ -26,7 +29,7 @@
               <el-button id="settings" type="primary" icon="el-icon-s-tools" circle></el-button>
               <el-dropdown-menu slot="dropdown">
                 <el-dropdown-item>给我打钱</el-dropdown-item>
-                <el-dropdown-item>登出</el-dropdown-item>
+                <el-dropdown-item @click.native="logout">登出</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </div>
@@ -35,11 +38,14 @@
             <el-button  type="primary" icon="el-icon-plus" circle></el-button>
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item>
-                <el-upload
-                  action="https://jsonplaceholder.typicode.com/posts/">上传文件
+                <el-upload class="upload-demo"
+                  action="http://localhost:9000/upload"
+                           multiple
+                  :http-request="uploadFile"
+                  :show-file-list="false">上传文件
                 </el-upload>
               </el-dropdown-item>
-              <el-dropdown-item>新建文件夹</el-dropdown-item>
+              <el-dropdown-item @click="newDir">新建文件夹</el-dropdown-item>
             </el-dropdown-menu>
             </el-dropdown>
           </div>
@@ -52,10 +58,8 @@
         </el-header>
 
         <el-main>
-          <el-table :data="sortedFiles">
-            <template>
-              <i class="el-icon-share"></i>
-            </template>
+          <el-table :data="sortedFiles" @row-contextmenu="onContextmenu" @row-click="cd" >
+
             <el-table-column prop="isdir" width="35">
               <template slot-scope="scope">
                 <i v-if="scope.row.dir" class="el-icon-folder"></i>
@@ -69,6 +73,7 @@
             <el-table-column prop="size" label="大小" min-width="50" sortable :formatter="formatSize">
             </el-table-column>
           </el-table>
+
         </el-main>
         <el-footer id="footer">
         </el-footer>
@@ -79,15 +84,16 @@
 </template>
 
 <script>
-import {allFile} from '@/api/api'
+import {allFile, upload} from '@/api/api'
+import {download} from "../api/api";
 
 
 export default {
   name: "dropbox",
-
+  components: {},
   data(){
     return{
-      username: 'draco',
+      username: '',
       files: [],
     }
   },
@@ -100,13 +106,23 @@ export default {
     }
   },
   methods: {
-    getAllFile: function (){
-      allFile(this.username).then((response)=>{
-        if(response.data['success'] === true){
+    getAllFile: function () {
+      allFile(this.username).then((response) => {
+        if (response.data['success'] === true) {
           this.files = response.data['data'];
           // console.log(this.files)
         }
       });
+    },
+    uploadFile: function (file) {
+      console.log("upload")
+      upload(file).then((response) => {
+        if (response.data['success']) {
+          this.Alert(response.data['msg'], "success");
+          this.getAllFile();
+        }
+        else this.Alert(response.data['msg'], "error")
+      })
     },
     // formatBoolean: function (row, column, cellValue){
     //   var ret = '';
@@ -117,12 +133,12 @@ export default {
     //   }
     //   return ret;
     // }
-    compare: function(p){
-      return function(m,n){
-      var a = m[p];
-      var b = n[p];
-      if(p==='dir') return b - a;
-      return a - b;
+    compare: function (p) {
+      return function (m, n) {
+        var a = m[p];
+        var b = n[p];
+        if (p === 'dir') return b - a;
+        return a - b;
       };
     },
 
@@ -136,20 +152,92 @@ export default {
     //   var name2 = obj2.name;
     //   return name1 > name2;
     // }
-    formatSize: function (row, column, cellValue){
+    formatSize: function (row, column, cellValue) {
       var ret = '';
-      if(cellValue === null){
+      if (cellValue === null) {
         return '';
-      }else if(cellValue < 1024){
+      } else if (cellValue < 1024) {
         ret = cellValue + 'byte';
-      }else if(cellValue < 1024 * 1024){
+      } else if (cellValue < 1024 * 1024) {
         ret = (cellValue / 1024).toFixed(2) + 'KB';
-      }else if(cellValue < 1024 * 1024 * 1024){
+      } else if (cellValue < 1024 * 1024 * 1024) {
         ret = (cellValue / 1024 / 1024).toFixed(2) + 'MB';
       }
       return ret;
+    },
+
+    newDir: function () {
+      this.$prompt('新建文件夹', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+      })
+    },
+
+    onContextmenu(row, column, event) {
+      event.preventDefault();
+      this.$contextmenu({
+        items: [
+          {
+            label: "下载",
+            icon: "el-icon-download",
+            onClick: () => {
+              console.log("下载");
+              this.downloadFile(row.name);
+            },
+            disabled: row.dir
+          },
+          {
+            label: "收藏",
+            icon: "el-icon-star-off",
+            disabled: true,
+            divided: true,
+          },
+          {
+            label: "删除",
+            icon: "el-icon-delete"
+          }
+        ],
+        event,
+        //x: event.clientX,
+        //y: event.clientY,
+        customClass: "custom-class",
+        zIndex: 3,
+        minWidth: 230
+      });
+      return false;
+    },
+    cd: function (row) {
+      if(row.dir){
+        console.log("cd")
+      }
+    },
+    logout: function (){
+      window.sessionStorage.clear();
+      this.$router.push('/login');
+    },
+    downloadFile:function (filePath){
+      download(filePath).then((response)=>{
+        console.log(response);
+
+        const { data, headers } = response
+        //http头不能放中文，所以先encode再decode
+        const fileName = decodeURIComponent(escape(response.headers['file-name']))
+        // 此处当返回json文件时需要先对data进行JSON.stringify处理，其他类型文件不用做处理
+        //const blob = new Blob([JSON.stringify(data)], ...)
+        const blob = new Blob([data], {type: headers['content-type']})
+        let dom = document.createElement('a')
+        let url = window.URL.createObjectURL(blob)
+        dom.href = url
+        dom.download = decodeURI(fileName)
+        dom.style.display = 'none'
+        document.body.appendChild(dom)
+        dom.click()
+        dom.parentNode.removeChild(dom)
+        window.URL.revokeObjectURL(url)
+      })
     }
   },
+
   mounted() {
     this.getAllFile();
   }

@@ -1,13 +1,13 @@
 import request from '@/utils/request'
 
-const CheckUrl = 'check'
+const CheckUrl = '/user/check'
 export function checkRepetition(username){
     return request.post(CheckUrl, {
         username: username
     })
 }
 
-const RegisterUrl = "register"
+const RegisterUrl = "/user/register"
 export function register(username, password){
     return request.post(RegisterUrl, {
         username: username,
@@ -15,7 +15,7 @@ export function register(username, password){
     })
 }
 
-const LoginUrl = "login"
+const LoginUrl = "/user/login"
 export function login(username, password){
     return request.post(LoginUrl,{
         username: username,
@@ -23,7 +23,39 @@ export function login(username, password){
     })
 }
 
-const AllFileUrl = "file/"
-export function allFile(username){
-    return request.get(AllFileUrl + username);
+const CheckTokenUrl = "/user/token"
+export function checkToken(){
+    return request.post(CheckTokenUrl);
+}
+
+const AllFileUrl = "/file/allfile"
+export function allFile(){
+    return request.get(AllFileUrl);
+}
+
+const uploadUrl = "/file/upload"
+export function upload(obj){
+    let param = new FormData();
+    param.append('files', obj.file)
+    return request.post(uploadUrl, param, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
+}
+
+const newDirUrl = "/file/newdir"
+export function newDir(path){
+    return request.post(newDirUrl,{
+        path: path
+    })
+}
+
+//不能用post
+const downloadUrl = "/file/download"
+export function download(filePath){
+    return request.get(downloadUrl + '?filePath=' + filePath,{
+        responseType: 'blob'
+    })
+
 }

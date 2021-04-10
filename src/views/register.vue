@@ -1,7 +1,7 @@
 <template>
   <el-container>
     <el-header>
-      <h1>dropbox</h1>
+      <h1 align="center" style="color: #00a6ff;"><i class="el-icon-s-promotion"></i>&nbsp;dropbox</h1>
     </el-header>
     <el-main>
       <el-card class="box-card">
@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import {checkRepetition, register} from '@/api/api'
+import {checkRepetition, register, login} from '@/api/api'
 
 export default {
   name: "register",
@@ -59,7 +59,7 @@ export default {
       if (value === '') {
         callback(new Error('请再次输入密码'));
       } else if (value !== this.ruleForm.pass) {
-        callback(new Error('两次输入密码不一致!'));
+        callback(new Error('两次输入密码不一致'));
       } else {
         callback();
       }
@@ -89,10 +89,16 @@ export default {
         if (valid) {
           register(this.ruleForm.username, this.ruleForm.pass).then((response)=>{
             if(response.data['success'] === true){
-              alert(response.data['msg']);
-            //  注册成功跳转
+            //  注册成功后自动登录并跳转
+              login(this.ruleForm.username, this.ruleForm.pass).then((response)=>{
+                if(response.data.success === true) {
+                  window.sessionStorage.setItem('token', response.data.data);
+                  this.Alert(response.data['msg'], 'success');
+                  this.$router.push('/');
+                }
+              })
             }else {
-              alert(response.data['msg']);
+              this.Alert(response.data['msg'], 'error');
             }
           })
         } else {

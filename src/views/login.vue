@@ -1,7 +1,7 @@
 <template>
   <el-container>
     <el-header>
-      <h1>dropbox</h1>
+      <h1 align="center" style="color: #00a6ff;"><i class="el-icon-s-promotion"></i>&nbsp;dropbox</h1>
     </el-header>
     <el-main>
       <el-card class="box-card">
@@ -37,10 +37,14 @@ export default {
     submitForm: function (){
       login(this.username, this.password).then((response)=>{
         if(response.data['success'] === true){
-          alert(response.data['msg']);
+          // alert(response.data['msg']);
+          window.sessionStorage.setItem('token', response.data.data);
+          // console.log(response.data)
+          this.Alert(response.data.msg, "success");
           // 跳转
+          this.$router.push("/")
         }else {
-          alert(response.data['msg']);
+          this.Alert(response.data.msg, "error");
         }
       })
     },
