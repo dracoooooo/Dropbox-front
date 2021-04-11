@@ -84,9 +84,7 @@
 </template>
 
 <script>
-import {allFile, upload} from '@/api/api'
-import {download} from "../api/api";
-
+import {allFile, upload, download, Delete} from '@/api/api'
 
 export default {
   name: "dropbox",
@@ -181,7 +179,7 @@ export default {
             label: "下载",
             icon: "el-icon-download",
             onClick: () => {
-              console.log("下载");
+              console.log("downloading " + row.name);
               this.downloadFile(row.name);
             },
             disabled: row.dir
@@ -194,7 +192,11 @@ export default {
           },
           {
             label: "删除",
-            icon: "el-icon-delete"
+            icon: "el-icon-delete",
+            onClick:()=>{
+              console.log("delete " + row.name);
+              this.deleteFile(row.name);
+            }
           }
         ],
         event,
@@ -234,6 +236,16 @@ export default {
         dom.click()
         dom.parentNode.removeChild(dom)
         window.URL.revokeObjectURL(url)
+      })
+    },
+    deleteFile: function (filePath){
+      Delete(filePath).then((response)=>{
+        if(response.data.success === true){
+          this.Alert(response.data.msg, 'success');
+          this.getAllFile();
+        }else {
+          this.Alert(response.data.msg, 'error');
+        }
       })
     }
   },

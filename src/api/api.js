@@ -57,5 +57,9 @@ export function download(filePath){
     return request.get(downloadUrl + '?filePath=' + filePath,{
         responseType: 'blob'
     })
+}
 
+const deleteUrl = "/file/delete"
+export function Delete(filePath){
+    return request.post(deleteUrl + '?filePath=' + filePath);
 }
